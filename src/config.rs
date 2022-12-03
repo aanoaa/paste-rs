@@ -2,12 +2,14 @@ use std::path::Path;
 
 use config::ConfigError;
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Deserialize)]
 pub struct Config {
     /// address to bind
     pub address: String,
     /// number of workers
     pub workers: Option<usize>,
+    /// local path to file upload
+    pub upload_path: String,
 }
 
 impl Config {
