@@ -1,2 +1,4 @@
-address     = "127.0.0.1:8080"
-upload_path = "./upload"
+address                = "127.0.0.1:8080"
+upload_path            = "./upload"
+delete_expired_enabled = true # default: false
+delete_expired_ttl     = "1d" # default: 86400s

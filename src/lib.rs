@@ -2,6 +2,7 @@
 pub mod config;
 pub mod paste;
 pub mod server;
+pub mod util;
 
 /// environment variable for configuration file path
 pub const CONFIG_ENV: &str = "CONFIG";

@@ -1,4 +1,7 @@
-use std::path::Path;
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use config::ConfigError;
 
@@ -6,10 +9,11 @@ use config::ConfigError;
 pub struct Config {
     /// address to bind
     pub address: String,
-    /// number of workers
-    pub workers: Option<usize>,
     /// local path to file upload
-    pub upload_path: String,
+    pub upload_path: PathBuf,
+    pub delete_expired_enabled: Option<bool>,
+    #[serde(default, with = "humantime_serde")]
+    pub delete_expired_ttl: Option<Duration>,
 }
 
 impl Config {
