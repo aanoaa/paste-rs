@@ -1,9 +1,10 @@
-use std::{env, io::Result, path::PathBuf};
+use std::{env, path::PathBuf};
 
-use paste_rs::{config::Config, CONFIG_ENV};
+use actix_web::{App, HttpServer};
+use paste_rs::{config::Config, server, CONFIG_ENV};
 
 #[actix_web::main]
-async fn main() -> Result<()> {
+async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
     env_logger::init();
     let config_path = match env::var(CONFIG_ENV).ok() {
@@ -13,5 +14,9 @@ async fn main() -> Result<()> {
 
     let config = Config::from(&config_path).expect("config read fail");
     log::trace!("{:#?}", config);
-    Ok(())
+
+    HttpServer::new(|| App::new().configure(server::configure))
+        .bind(config.address)?
+        .run()
+        .await
 }
