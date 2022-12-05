@@ -93,6 +93,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(delete);
 }
 
+/// represent service itself url from `Host` header
+/// if `X-Forwarded-*` header exists, use them.
 fn hostname(req: HttpRequest) -> String {
     const FORWARDED_HEADER_PREFIX: &str = "x-forwarded-";
 
@@ -120,9 +122,11 @@ fn hostname(req: HttpRequest) -> String {
     if host.is_empty() {
         format!(
             "http://{}",
-            headers.get(header::HOST).unwrap().to_str().unwrap()
+            headers.get(header::HOST).unwrap().to_str().unwrap() // Host header 는 항상 있어야 함
         )
     } else {
         host.join("://")
     }
 }
+
+// TODO: add test
