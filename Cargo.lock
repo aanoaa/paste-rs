@@ -905,6 +905,7 @@ dependencies = [
  "infer",
  "log",
  "rand",
+ "regex",
  "serde",
  "serde_json",
 ]

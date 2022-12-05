@@ -5,6 +5,7 @@ use std::{
 };
 
 use rand::{distributions::Alphanumeric, Rng};
+use regex::Regex;
 
 use crate::{DEFAULT_EXTENSION, DEFAULT_MIME_TYPE};
 
@@ -39,7 +40,14 @@ impl Paste {
             log::trace!("{:?} directory created", path);
         }
         path.push(self.random_file_name());
-        // path.set_extension(self.mime_type().1);
+        let (mime_type, _) = self.mime_type(); // text/plain, txt
+        let re = Regex::new(r"^text").unwrap();
+        if !re.is_match(mime_type) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "file type not permitted",
+            ));
+        }
         let mut buf = File::create(&path)?;
         buf.write_all(&self.data)?;
         log::trace!("{:?} create and wrote file successfully", path);
