@@ -11,6 +11,8 @@ pub struct Config {
     pub address: String,
     /// local path to file upload
     pub upload_path: PathBuf,
+    /// max content length
+    pub max_content_length: usize,
     pub delete_expired_enabled: Option<bool>,
     #[serde(default, with = "humantime_serde")]
     pub delete_expired_ttl: Option<Duration>,

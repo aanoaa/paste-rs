@@ -6,6 +6,8 @@ pub mod util;
 
 /// environment variable for configuration file path
 pub const CONFIG_ENV: &str = "CONFIG";
+pub const DEFAULT_MIME_TYPE: &str = "text/plain";
+pub const DEFAULT_EXTENSION: &str = "txt";
 
 /// template landing page content
 pub const LANDING_PAGE: &str = r#"
