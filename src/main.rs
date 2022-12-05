@@ -2,6 +2,7 @@ use std::time::Duration;
 use std::{env, path::PathBuf};
 use std::{fs, thread};
 
+use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use paste_rs::util;
@@ -54,6 +55,7 @@ async fn main() -> std::io::Result<()> {
     let config_data = Data::new(config.clone());
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(Data::clone(&config_data))
             .configure(server::configure)
     })
