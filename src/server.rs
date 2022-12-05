@@ -1,5 +1,7 @@
+use std::fs;
+
 use actix_web::{
-    error, get,
+    delete, error, get,
     http::header::{self, ContentType},
     post, web, Error, HttpRequest, HttpResponse,
 };
@@ -27,6 +29,19 @@ async fn serve(id: web::Path<String>, config: web::Data<Config>) -> Result<HttpR
         .body(paste.data))
 }
 
+#[delete("/{id}")]
+async fn delete(id: web::Path<String>, config: web::Data<Config>) -> Result<HttpResponse, Error> {
+    let mut path = config.upload_path.clone();
+    path.push(&*id);
+    if !path.exists() {
+        Err(error::ErrorNotFound("file not found"))
+    } else {
+        fs::remove_file(&path)?;
+        log::info!("file deleted successfully: {:?}", &path);
+        Ok(HttpResponse::Ok().body("OK\n"))
+    }
+}
+
 #[post("/")]
 async fn upload(
     req: HttpRequest,
@@ -52,11 +67,11 @@ async fn upload(
     let mut upload_path = config.upload_path.clone();
     match paste.save_to(&mut upload_path) {
         Ok(path) => {
+            log::info!("file uploaded successfully: {:?}", &path);
             if let Some(file_stem) = path.file_stem() {
                 let location = format!("{}/{}", hostname(req), file_stem.to_str().unwrap());
                 let mut body = location.clone();
                 body.push('\n');
-                log::debug!("location: {}", &location);
                 Ok(HttpResponse::Found()
                     .insert_header((header::LOCATION, location))
                     .body(body))
@@ -72,7 +87,10 @@ async fn upload(
 }
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(index).service(upload).service(serve);
+    cfg.service(index)
+        .service(upload)
+        .service(serve)
+        .service(delete);
 }
 
 fn hostname(req: HttpRequest) -> String {
