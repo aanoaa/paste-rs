@@ -17,8 +17,8 @@ pub struct Paste {
 
 impl Paste {
     /// returns data `mime_type` and `extension` as tuple
-    pub fn mime_type(&self) -> (&str, &str) {
-        match infer::get(&self.data) {
+    pub fn mime_type(data: &[u8]) -> (&'static str, &'static str) {
+        match infer::get(data) {
             Some(kind) => (kind.mime_type(), kind.extension()),
             None => (DEFAULT_MIME_TYPE, DEFAULT_EXTENSION),
         }
@@ -52,7 +52,7 @@ impl Paste {
             log::trace!("{:?} directory created", path);
         }
         path.push(Paste::random_file_name(path.to_str()));
-        let (mime_type, _) = self.mime_type(); // text/plain, txt
+        let (mime_type, _) = Paste::mime_type(&self.data); // text/plain, txt
         let re = Regex::new(r"^text").unwrap();
         if !re.is_match(mime_type) {
             return Err(std::io::Error::new(
@@ -96,7 +96,7 @@ mod tests {
     fn test_mime_type() {
         let data = "hello world".as_bytes().to_vec();
         let paste = Paste { data };
-        let (mime_type, extension) = paste.mime_type();
+        let (mime_type, extension) = Paste::mime_type(&paste.data);
         assert_eq!(mime_type, "text/plain");
         assert_eq!(extension, "txt");
 
@@ -110,7 +110,7 @@ mod tests {
             .as_bytes()
             .to_vec();
         let paste = Paste { data };
-        let (mime_type, extension) = paste.mime_type();
+        let (mime_type, extension) = Paste::mime_type(&paste.data);
         assert_eq!(mime_type, "text/html");
         assert_eq!(extension, "html");
     }

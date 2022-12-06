@@ -49,7 +49,6 @@ async fn upload(
     config: web::Data<Config>,
 ) -> Result<HttpResponse, Error> {
     let mut content_len: usize = 0;
-    let mut paste = Paste { data: vec![] };
     let file_name = Paste::random_file_name(config.upload_path.to_str());
     let upload_path = PathBuf::from(file_name);
     while let Some(chunk) = payload.try_next().await? {
@@ -62,7 +61,7 @@ async fn upload(
             }
             return Err(error::ErrorPayloadTooLarge("upload limit exceed"));
         }
-        let appended_len = paste.append(&mut bytes.to_vec(), &upload_path)?;
+        let appended_len = Paste::append(&mut bytes.to_vec(), &upload_path)?;
         log::trace!("file appended {} length", appended_len);
     }
 
