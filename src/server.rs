@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
 use actix_web::{
     delete, error, get,
@@ -48,41 +48,38 @@ async fn upload(
     mut payload: web::Payload,
     config: web::Data<Config>,
 ) -> Result<HttpResponse, Error> {
-    let mut bytes = web::BytesMut::new();
-    while let Some(item) = payload.try_next().await? {
-        bytes.extend_from_slice(&item);
-        if bytes.len() > config.max_content_length {
+    let mut content_len: usize = 0;
+    let mut paste = Paste { data: vec![] };
+    let file_name = Paste::random_file_name(config.upload_path.to_str());
+    let upload_path = PathBuf::from(file_name);
+    while let Some(chunk) = payload.try_next().await? {
+        let mut bytes = web::BytesMut::new();
+        bytes.extend_from_slice(&chunk);
+        content_len += bytes.len();
+        if content_len > config.max_content_length {
+            if upload_path.exists() {
+                fs::remove_file(upload_path)?;
+            }
             return Err(error::ErrorPayloadTooLarge("upload limit exceed"));
         }
+        let appended_len = paste.append(&mut bytes.to_vec(), &upload_path)?;
+        log::trace!("file appended {} length", appended_len);
     }
 
-    if bytes.is_empty() {
-        return Err(error::ErrorBadRequest("invalid file"));
+    if content_len == 0 {
+        return Err(error::ErrorBadRequest("empty file not allowed"));
     }
 
-    let paste = Paste {
-        data: bytes.to_vec(),
-    };
-
-    let mut upload_path = config.upload_path.clone();
-    match paste.save_to(&mut upload_path) {
-        Ok(path) => {
-            log::info!("file uploaded successfully: {:?}", &path);
-            if let Some(file_stem) = path.file_stem() {
-                let location = format!("{}/{}", hostname(req), file_stem.to_str().unwrap());
-                let mut body = location.clone();
-                body.push('\n');
-                Ok(HttpResponse::Found()
-                    .insert_header((header::LOCATION, location))
-                    .body(body))
-            } else {
-                Err(error::ErrorInternalServerError("paste fail"))
-            }
-        }
-        Err(e) => {
-            log::error!("paste fail: {e}");
-            Err(error::ErrorInternalServerError(e))
-        }
+    log::info!("file uploaded successfully: {:?}", &upload_path);
+    if let Some(file_stem) = upload_path.file_stem() {
+        let location = format!("{}/{}", hostname(req), file_stem.to_str().unwrap());
+        let mut body = location.clone();
+        body.push('\n');
+        Ok(HttpResponse::Found()
+            .insert_header((header::LOCATION, location))
+            .body(body))
+    } else {
+        Err(error::ErrorInternalServerError("paste fail"))
     }
 }
 

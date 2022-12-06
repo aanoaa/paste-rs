@@ -25,12 +25,24 @@ impl Paste {
     }
 
     /// returns 3 length alpha-numeric randomized string
-    fn random_file_name(&self) -> String {
-        rand::thread_rng()
-            .sample_iter(Alphanumeric)
-            .take(3)
-            .map(char::from)
-            .collect::<String>()
+    pub fn random_file_name(base: Option<&str>) -> String {
+        loop {
+            let file_name = rand::thread_rng()
+                .sample_iter(Alphanumeric)
+                .take(3)
+                .map(char::from)
+                .collect::<String>();
+
+            let path = if let Some(base) = base {
+                PathBuf::from(format!("{}/{}", base, &file_name))
+            } else {
+                PathBuf::from(&file_name)
+            };
+
+            if !path.exists() {
+                return String::from(path.to_str().unwrap());
+            }
+        }
     }
 
     // TODO: stdin for '-'
@@ -39,7 +51,7 @@ impl Paste {
             fs::create_dir_all(&path)?;
             log::trace!("{:?} directory created", path);
         }
-        path.push(self.random_file_name());
+        path.push(Paste::random_file_name(path.to_str()));
         let (mime_type, _) = self.mime_type(); // text/plain, txt
         let re = Regex::new(r"^text").unwrap();
         if !re.is_match(mime_type) {
@@ -52,6 +64,14 @@ impl Paste {
         buf.write_all(&self.data)?;
         log::trace!("{:?} create and wrote file successfully", path);
         Ok(path.to_path_buf())
+    }
+
+    pub fn append(&mut self, chunk: &mut Vec<u8>, path: &PathBuf) -> IoResult<usize> {
+        let mut buf = File::options().create(true).append(true).open(path)?;
+        let size = chunk.len();
+        buf.write_all(chunk)?;
+        self.data.append(chunk);
+        Ok(size)
     }
 
     pub fn from(path: &PathBuf) -> IoResult<Self> {
@@ -89,8 +109,7 @@ mod tests {
 
     #[test]
     fn test_random_file_name() {
-        let paste = Paste::default();
-        let s = paste.random_file_name();
+        let s = Paste::random_file_name(Some("upload"));
         assert_eq!(s.len(), 3);
     }
 
