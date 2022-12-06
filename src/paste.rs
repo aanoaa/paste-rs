@@ -66,11 +66,19 @@ impl Paste {
         Ok(path.to_path_buf())
     }
 
-    pub fn append(&mut self, chunk: &mut Vec<u8>, path: &PathBuf) -> IoResult<usize> {
+    pub fn append(chunk: &mut Vec<u8>, path: &PathBuf) -> IoResult<usize> {
+        let (mime_type, _) = Paste::mime_type(chunk);
+        let re = Regex::new(r"^text").unwrap();
+        if !re.is_match(mime_type) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "file type not permitted",
+            ));
+        }
+
         let mut buf = File::options().create(true).append(true).open(path)?;
         let size = chunk.len();
         buf.write_all(chunk)?;
-        self.data.append(chunk);
         Ok(size)
     }
 
