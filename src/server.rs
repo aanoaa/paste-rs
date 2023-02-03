@@ -11,8 +11,9 @@ use crate::{config::Config, paste::Paste, DEFAULT_MIME_TYPE, LANDING_PAGE};
 
 #[get("/")]
 async fn index(req: HttpRequest) -> HttpResponse {
-    let hostname = hostname(req);
     let template = LANDING_PAGE;
+    let info = req.connection_info();
+    let hostname = format!("{}://{}", info.scheme(), info.host());
     let content = template.replace(":HOST:", &hostname);
     HttpResponse::Ok()
         .content_type(ContentType::plaintext())
@@ -71,7 +72,9 @@ async fn upload(
 
     log::info!("file uploaded successfully: {:?}", &upload_path);
     if let Some(file_stem) = upload_path.file_stem() {
-        let location = format!("{}/{}", hostname(req), file_stem.to_str().unwrap());
+        let info = req.connection_info();
+        let hostname = format!("{}://{}", info.scheme(), info.host());
+        let location = format!("{}/{}", hostname, file_stem.to_str().unwrap());
         let mut body = location.clone();
         body.push('\n');
         Ok(HttpResponse::Found()
@@ -88,41 +91,3 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(serve)
         .service(delete);
 }
-
-/// represent service itself url from `Host` header
-/// if `X-Forwarded-*` header exists, use them.
-fn hostname(req: HttpRequest) -> String {
-    const FORWARDED_HEADER_PREFIX: &str = "x-forwarded-";
-
-    let headers = req.headers();
-    let mut host: Vec<&str> = Vec::new();
-    for word in ["protocol", "host"] {
-        match headers.get(format!("{}{}", FORWARDED_HEADER_PREFIX, word)) {
-            Some(header_value) => match header_value.to_str() {
-                Ok(value) => {
-                    host.push(value);
-                }
-                Err(e) => {
-                    log::trace!("unexpected header value: {e}");
-                    host.clear();
-                    break;
-                }
-            },
-            None => {
-                host.clear();
-                break;
-            }
-        }
-    }
-
-    if host.is_empty() {
-        format!(
-            "http://{}",
-            headers.get(header::HOST).unwrap().to_str().unwrap() // Host header 는 항상 있어야 함
-        )
-    } else {
-        host.join("://")
-    }
-}
-
-// TODO: add test
