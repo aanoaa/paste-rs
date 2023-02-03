@@ -19,7 +19,14 @@ impl Paste {
     /// returns data `mime_type` and `extension` as tuple
     pub fn mime_type(data: &[u8]) -> (&'static str, &'static str) {
         match infer::get(data) {
-            Some(kind) => (kind.mime_type(), kind.extension()),
+            Some(kind) => {
+                let mime_type = kind.mime_type();
+                let mime_type = match mime_type {
+                    "text/plain" => DEFAULT_MIME_TYPE,
+                    _ => mime_type,
+                };
+                (mime_type, kind.extension())
+            }
             None => (DEFAULT_MIME_TYPE, DEFAULT_EXTENSION),
         }
     }

@@ -6,7 +6,7 @@ pub mod util;
 
 /// environment variable for configuration file path
 pub const CONFIG_ENV: &str = "CONFIG";
-pub const DEFAULT_MIME_TYPE: &str = "text/plain";
+pub const DEFAULT_MIME_TYPE: &str = "text/plain; charset=utf-8";
 pub const DEFAULT_EXTENSION: &str = "txt";
 pub const DEFAULT_WORKERS: usize = 4;
 
