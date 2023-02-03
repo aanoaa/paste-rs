@@ -9,6 +9,8 @@ use config::ConfigError;
 pub struct Config {
     /// address to bind
     pub address: String,
+    /// worker count
+    pub workers: Option<usize>,
     /// local path to file upload
     pub upload_path: PathBuf,
     /// max content length

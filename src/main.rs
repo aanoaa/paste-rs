@@ -5,8 +5,8 @@ use std::{fs, thread};
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
-use paste_rs::util;
 use paste_rs::{config::Config, server, CONFIG_ENV};
+use paste_rs::{util, DEFAULT_WORKERS};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -60,6 +60,7 @@ async fn main() -> std::io::Result<()> {
             .configure(server::configure)
     })
     .bind(config.address)?
+    .workers(config.workers.unwrap_or(DEFAULT_WORKERS))
     .run()
     .await
 }
