@@ -85,8 +85,14 @@ async fn upload(
     }
 }
 
+#[get("health")]
+async fn health() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(index)
+        .service(health)
         .service(upload)
         .service(serve)
         .service(delete);

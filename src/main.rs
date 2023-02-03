@@ -55,7 +55,7 @@ async fn main() -> std::io::Result<()> {
     let config_data = Data::new(config.clone());
     HttpServer::new(move || {
         App::new()
-            .wrap(Logger::default())
+            .wrap(Logger::default().exclude("health").exclude("/favicon.ico"))
             .app_data(Data::clone(&config_data))
             .configure(server::configure)
     })
